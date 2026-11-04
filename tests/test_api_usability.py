@@ -3,10 +3,12 @@ import unittest
 from fastapi.testclient import TestClient
 
 from main import app
+from rpi_observer import IOs
 
 
 class ApiUsabilityTests(unittest.TestCase):
     def setUp(self):
+        IOs.clear()
         self.client = TestClient(app)
 
     def test_root_lists_meaningful_endpoints(self):
@@ -40,6 +42,20 @@ class ApiUsabilityTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("GPIO 18", response.json()["message"])
         self.assertEqual(response.json()["state"], "high")
+
+    def test_dashboard_is_available_as_html(self):
+        response = self.client.get("/dashboard")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("text/html", response.headers.get("content-type", ""))
+        self.assertIn("Raspi GPIO Observer", response.text)
+
+    def test_get_config_returns_configuration_list(self):
+        self.client.post("/config", json={"gpio": 11, "pull_down": True, "edge": "rising"})
+        response = self.client.get("/config")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn("configurations", data)
+        self.assertTrue(any(entry["gpio"] == 11 for entry in data["configurations"]))
 
 
 if __name__ == "__main__":
