@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Raspi GPIO Observer</title>
+    <link rel="stylesheet" href="/static/dashboard.css">
+  </head>
+  <body>
+    <main class="container">
+      <section class="card">
+        <h1>Raspi GPIO Observer</h1>
+        <p class="subtitle">Konfiguration ansehen und direkt im Browser ändern.</p>
+        {% if message %}
+          <div class="message">{{ message }}</div>
+        {% endif %}
+      </section>
+
+      <section class="card">
+        <h2>Neue Konfiguration anlegen</h2>
+        <div class="forms">
+          <form action="/dashboard/input" method="post" class="form-block">
+            <h3>Input</h3>
+            <label for="new-input-gpio">GPIO (0-40)</label>
+            <input id="new-input-gpio" name="gpio" type="number" min="0" max="40" required>
+            <label for="new-input-edge">Edge</label>
+            <select id="new-input-edge" name="edge">
+              <option value="rising">rising</option>
+              <option value="falling">falling</option>
+              <option value="both">both</option>
+            </select>
+            <label class="inline">
+              <input type="checkbox" name="pull_down" value="true" checked>
+              Pull-Down aktiv
+            </label>
+            <button type="submit">Input speichern</button>
+          </form>
+
+          <form action="/dashboard/output" method="post" class="form-block">
+            <h3>Output</h3>
+            <label for="new-output-gpio">GPIO (0-40)</label>
+            <input id="new-output-gpio" name="gpio" type="number" min="0" max="40" required>
+            <label for="new-output-state">Status</label>
+            <select id="new-output-state" name="state">
+              <option value="low">low</option>
+              <option value="high">high</option>
+            </select>
+            <button type="submit">Output speichern</button>
+          </form>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Aktuelle Konfiguration</h2>
+        {% if configurations %}
+          <table>
+            <thead>
+              <tr>
+                <th>GPIO</th>
+                <th>Typ</th>
+                <th>Status</th>
+                <th>Pull-Down</th>
+                <th>Edge</th>
+                <th>Ändern</th>
+                <th>Löschen</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in configurations %}
+                <tr>
+                  <td>{{ item.gpio }}</td>
+                  <td>{{ item.type }}</td>
+                  <td>{{ item.state }}</td>
+                  <td>{{ item.pull_down if item.pull_down is not none else "-" }}</td>
+                  <td>{{ item.edge if item.edge is not none else "-" }}</td>
+                  <td>
+                    {% if item.type == "input" %}
+                      <form action="/dashboard/input" method="post" class="inline-form">
+                        <input type="hidden" name="gpio" value="{{ item.gpio }}">
+                        <select name="edge">
+                          <option value="rising" {% if item.edge == "rising" %}selected{% endif %}>rising</option>
+                          <option value="falling" {% if item.edge == "falling" %}selected{% endif %}>falling</option>
+                          <option value="both" {% if item.edge == "both" %}selected{% endif %}>both</option>
+                        </select>
+                        <label class="inline">
+                          <input type="checkbox" name="pull_down" value="true" {% if item.pull_down %}checked{% endif %}>
+                          Pull-Down
+                        </label>
+                        <button type="submit">Update</button>
+                      </form>
+                    {% else %}
+                      <form action="/dashboard/output" method="post" class="inline-form">
+                        <input type="hidden" name="gpio" value="{{ item.gpio }}">
+                        <select name="state">
+                          <option value="low" {% if item.state == "low" %}selected{% endif %}>low</option>
+                          <option value="high" {% if item.state == "high" %}selected{% endif %}>high</option>
+                        </select>
+                        <button type="submit">Update</button>
+                      </form>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <form action="/dashboard/delete/{{ item.gpio }}" method="post">
+                      <button class="danger" type="submit">Entfernen</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p>Noch keine GPIOs konfiguriert.</p>
+        {% endif %}
+      </section>
+
+      <section class="card">
+        <h2>Persistenz</h2>
+        <div class="actions">
+          <form action="/dashboard/save" method="post"><button type="submit">Konfiguration speichern</button></form>
+          <form action="/dashboard/load" method="post"><button type="submit">Konfiguration laden</button></form>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

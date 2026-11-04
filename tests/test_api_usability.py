@@ -11,8 +11,14 @@ class ApiUsabilityTests(unittest.TestCase):
         IOs.clear()
         self.client = TestClient(app)
 
-    def test_root_lists_meaningful_endpoints(self):
+    def test_root_serves_web_app(self):
         response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("text/html", response.headers.get("content-type", ""))
+        self.assertIn("Konfiguration ansehen", response.text)
+
+    def test_api_lists_meaningful_endpoints(self):
+        response = self.client.get("/api")
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIn("endpoints", data)
